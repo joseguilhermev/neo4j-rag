@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+boto3
+pymupdf
+langchain
+langchain-openai
+langchain-community
+langchain-experimental
+gradio

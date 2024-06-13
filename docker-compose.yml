@@ -1,0 +1,44 @@
+services:
+  minio:
+    image: minio/minio
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minio-access-key
+      MINIO_ROOT_PASSWORD: minio-secret-key
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio-data:/data
+
+  neo4j:
+    image: neo4j:latest
+    container_name: neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      NEO4J_AUTH: neo4j/password
+      NEO4J_PLUGINS: '["apoc"]'
+    volumes:
+      - neo4j-data:/data
+
+  ollama:
+    image: ollama/ollama:latest
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+    volumes:
+      - ./data/ollama:/root/.ollama
+    ports:
+      - 11434:11434
+
+volumes:
+  minio-data:
+  neo4j-data:
+  ollama-data:
