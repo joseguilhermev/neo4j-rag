@@ -8,3 +8,4 @@ langchain-community
 langchain-experimental
 gradio
 json-repair
+neo4j
