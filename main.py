@@ -1,5 +1,6 @@
 import boto3
 from botocore.client import Config
+from botocore.exceptions import ClientError
 from io import BytesIO
 import fitz
 import gradio as gr
@@ -15,7 +16,7 @@ from langchain_community.embeddings.ollama import OllamaEmbeddings
 from langchain_core.output_parsers import StrOutputParser
 
 # Configuration parameters
-MINIO_BUCKET_NAME = "meu-novo-bucket"
+MINIO_BUCKET_NAME = "pdf-bucket"
 MINIO_ENDPOINT_URL = "http://localhost:9000"
 MINIO_ACCESS_KEY = "minio-access-key"
 MINIO_SECRET_KEY = "minio-secret-key"
@@ -34,6 +35,23 @@ def setup_s3_client():
         config=Config(signature_version="s3v4"),
         region_name="us-east-1",
     )
+
+
+# Function to create a bucket if it doesn't exist
+def create_bucket_if_not_exists(s3_client, bucket_name):
+    try:
+        s3_client.head_bucket(Bucket=bucket_name)
+        print(f'Bucket "{bucket_name}" already exists.')
+    except ClientError as e:
+        error_code = e.response["Error"]["Code"]
+        if error_code == "404":
+            try:
+                s3_client.create_bucket(Bucket=bucket_name)
+                print(f'Bucket "{bucket_name}" created successfully.')
+            except ClientError as e:
+                print(f"Error creating bucket: {e}")
+        else:
+            print(f"Error checking bucket: {e}")
 
 
 # Neo4j client setup using LangChain's Neo4jGraph
@@ -71,6 +89,7 @@ def setup_qa_chain(llm, graph):
 
 # Setup components
 s3 = setup_s3_client()
+create_bucket_if_not_exists(s3, MINIO_BUCKET_NAME)
 graph = setup_neo4j_graph()
 vector_index = setup_neo4j_vector(graph)
 llm = setup_llm()
